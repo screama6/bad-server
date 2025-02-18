@@ -39,3 +39,6 @@ export const ALLOWED_MIME_TYPES = [
 
 export const CSRF_SECRET = 'csrf secret'
 export const CSRF_COOKIE_NAME = 'x-csrf-token'
+
+export const MIN_IMAGE_WIDTH = 50
+export const MIN_IMAGE_HEIGHT = 50

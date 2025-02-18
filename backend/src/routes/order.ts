@@ -11,7 +11,7 @@ import {
 import auth, { roleGuardMiddleware } from '../middlewares/auth'
 import { validateOrderBody } from '../middlewares/validations'
 import { Role } from '../models/user'
-import { checkQueryOnObject } from 'middlewares/check-query-on-object'
+import { checkQueryOnObject } from '../middlewares/check-query-on-object'
 
 const orderRouter = Router()
 
