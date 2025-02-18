@@ -39,12 +39,7 @@ export const getOrders = async (
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
-            if (typeof status === 'object') {
-                Object.assign(filters, status)
-            }
-            if (typeof status === 'string') {
-                filters.status = status
-            }
+            filters.status = status
         }
 
         if (totalAmountFrom) {
@@ -309,12 +304,6 @@ export const createOrder = async (
         const userId = res.locals.user._id
         const { address, payment, phone, total, email, items, comment } =
             req.body
-
-            if (typeof phone !== 'string' || phone.length > 15) {
-                return next(
-                    new BadRequestError('Недопустимая длина номера телефона')
-                )
-            }
 
         items.forEach((id: Types.ObjectId) => {
             const product = products.find((p) =>

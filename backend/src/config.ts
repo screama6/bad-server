@@ -36,3 +36,6 @@ export const ALLOWED_MIME_TYPES = [
     'image/gif',
     'image/svg+xml',
 ]
+
+export const CSRF_SECRET = 'csrf secret'
+export const CSRF_COOKIE_NAME = 'x-csrf-token'
