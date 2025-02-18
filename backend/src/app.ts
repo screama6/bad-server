@@ -4,32 +4,46 @@ import cors from 'cors'
 import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
+import mongoSanitize from 'express-mongo-sanitize'
 import path from 'path'
-import { DB_ADDRESS } from './config'
+import {
+    DB_ADDRESS,
+    PORT,
+    ORIGIN_ALLOW,
+    COOKIES_SECRET,
+    MAX_BODY_SIZE,
+} from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
+import { limiter} from './middlewares/limiter'
 
-const { PORT = 3000 } = process.env
 const app = express()
 
-app.use(cookieParser())
+app.use(cookieParser(COOKIES_SECRET))
 
-app.use(cors())
-// app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
-// app.use(express.static(path.join(__dirname, 'public')));
+app.use(limiter)
+
+app.use(json({ limit: MAX_BODY_SIZE }))
+
+app.use(
+    cors({
+        origin: ORIGIN_ALLOW,
+        credentials: true,
+        allowedHeaders: ['Authorization', 'Content-Type'],
+    })
+)
 
 app.use(serveStatic(path.join(__dirname, 'public')))
 
 app.use(urlencoded({ extended: true }))
 app.use(json())
 
-app.options('*', cors())
+app.use(mongoSanitize())
+
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)
-
-// eslint-disable-next-line no-console
 
 const bootstrap = async () => {
     try {
