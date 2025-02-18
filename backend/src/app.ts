@@ -20,26 +20,27 @@ import { limiter} from './middlewares/limiter'
 
 const app = express()
 
+const corsOptions = {
+    origin: ORIGIN_ALLOW,
+    credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
+}
+
 app.use(cookieParser(COOKIES_SECRET))
 
 app.use(limiter)
 
 app.use(json({ limit: MAX_BODY_SIZE }))
 
-app.use(
-    cors({
-        origin: ORIGIN_ALLOW,
-        credentials: true,
-        allowedHeaders: ['Authorization', 'Content-Type'],
-    })
-)
+app.use(cors(corsOptions))
 
 app.use(serveStatic(path.join(__dirname, 'public')))
 
 app.use(urlencoded({ extended: true }))
-app.use(json())
 
 app.use(mongoSanitize())
+
+app.options('*', cors())
 
 app.use(routes)
 app.use(errors())

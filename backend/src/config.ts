@@ -25,9 +25,14 @@ export const REFRESH_TOKEN = {
 }
 
 export const COOKIES_SECRET = 'cookie secret'
-
 export const MAX_BODY_SIZE = 1024 * 1024
-
-export const MAX_REQUEST_PER_MINUTE = 30
-
-export const MAX_FILE_SIZE = 5 * 1024 * 1024
+export const MAX_REQUEST_PER_MINUTE = 20
+export const MAX_FILE_SIZE = 10 * 1024 * 1024
+export const MIN_FILE_SIZE = 2 * 1024
+export const ALLOWED_MIME_TYPES = [
+    'image/png',
+    'image/jpg',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+]
