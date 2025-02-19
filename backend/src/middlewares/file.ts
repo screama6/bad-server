@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction, Express } from 'express'
+import * as fs from "node:fs";
 import multer, { FileFilterCallback } from 'multer'
 import { join, extname } from 'path'
 import { constants } from 'http2'
@@ -15,21 +16,22 @@ import {
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
 
+const tempDir = join(
+    __dirname,
+    process.env.UPLOAD_PATH_TEMP
+        ? `../public/${process.env.UPLOAD_PATH_TEMP}`
+        : '../public'
+)
+
+fs.mkdirSync(tempDir,{recursive: true})
+
 const storage = multer.diskStorage({
     destination: (
         _req: Request,
         _file: Express.Multer.File,
         cb: DestinationCallback
     ) => {
-        cb(
-            null,
-            join(
-                __dirname,
-                process.env.UPLOAD_PATH_TEMP
-                    ? `../public/${process.env.UPLOAD_PATH_TEMP}`
-                    : '../public'
-            )
-        )
+        cb(null, tempDir)
     },
 
     filename: (
