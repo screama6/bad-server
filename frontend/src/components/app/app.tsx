@@ -36,7 +36,7 @@ import MainPage from '@pages/main'
 import ProfilePage from '@pages/profile'
 import RegisterPage from '@pages/register/register-page'
 import { userActions } from '@slices/user'
-import { useActionCreators } from '@store/hooks'
+import { useActionCreators, useSelector } from '@store/hooks'
 import store, { persistor } from '@store/store'
 import { PropsWithChildren, useEffect } from 'react'
 import { Provider } from 'react-redux'
@@ -45,6 +45,8 @@ import 'react-toastify/dist/ReactToastify.css'
 import { PersistGate } from 'redux-persist/integration/react'
 import AdminCustomerDetail from '../admin/admin-customer-detail'
 import ProfileOrderDetail from '../profile/profile-order-detail'
+import { userSelectors } from '@slices/user'
+import { useRef } from 'react'
 
 const App = () => (
     <BrowserRouter>
@@ -61,14 +63,26 @@ export default App
 const RouteComponent = () => {
     const location = useLocation()
     const navigate = useNavigate()
+    const isAuthChecked = useSelector(userSelectors.getIsAuthChecked)
     const { authCheck, checkUserAuth } = useActionCreators(userActions)
     const handleModalClose = (path: To | number) => () => navigate(path as To)
 
+    const isFirstRender = useRef(true)
+    const isCheckingAuth = useRef(false)
+
     useEffect(() => {
-        checkUserAuth()
-            .unwrap()
-            .finally(() => authCheck())
-    }, [checkUserAuth, authCheck])
+        if (!isAuthChecked && isFirstRender.current) {
+            isFirstRender.current = false
+            isCheckingAuth.current = true
+            checkUserAuth()
+                .unwrap()
+                .catch(() => {})
+                .finally(() => {
+                    authCheck()
+                    isCheckingAuth.current = false
+                })
+        }
+    }, [checkUserAuth, authCheck, isAuthChecked])
 
     const locationState = location.state as { background?: Location }
     const background = locationState && locationState.background

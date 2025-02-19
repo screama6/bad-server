@@ -26,6 +26,8 @@ const corsOptions = {
     allowedHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
 }
 
+app.set('trust proxy', 'loopback')
+
 app.use(cookieParser(COOKIES_SECRET))
 
 app.use(limiter)
@@ -41,6 +43,17 @@ app.use(urlencoded({ extended: true }))
 app.use(mongoSanitize())
 
 app.options('*', cors())
+app.use((req, _res, next) => {
+    console.log('=== Request ===')
+    console.log('Method:', req.method)
+    console.log('Path:', req.path)
+    console.log('Headers:', {
+        csrf: req.headers['x-csrf-token'],
+        cookie: req.headers.cookie,
+        authorization: req.headers.authorization,
+    })
+    next()
+})
 
 app.use(routes)
 app.use(errors())
