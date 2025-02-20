@@ -30,17 +30,52 @@ export type ApiListResponse<Type> = {
     items: Type[]
 }
 
+type csrfTokenType = {
+    token: string
+    isLoading: boolean
+    isInit: boolean
+    promise: Promise<unknown>
+}
+
 class Api {
     private readonly baseUrl: string
     protected options: RequestInit
+    protected csrfToken: csrfTokenType
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
+
+        let resolve: (value: string) => void = () => {}
+        let reject: (value: string) => void = () => {}
+
+        this.csrfToken = {
+            promise: new Promise(() => ''),
+            token: '',
+            isLoading: false,
+            isInit: false,
+        }
+
         this.options = {
             headers: {
                 ...((options.headers as object) ?? {}),
             },
         }
+        const promise: csrfTokenType['promise'] = new Promise((res, rej) => {
+            resolve = res
+            reject = rej
+            this.csrfToken.isInit = true
+        })
+        this.csrfToken.promise = promise
+        this.getCsrfToken
+            .call(this)
+            .then((CSRFtoken) => {
+                this.csrfToken.token = CSRFtoken
+                resolve(CSRFtoken)
+            })
+            .catch(reject)
+            .finally(() => {
+                this.csrfToken.isLoading = false
+            })
     }
 
     protected handleResponse<T>(response: Response): Promise<T> {
@@ -53,11 +88,39 @@ class Api {
                   )
     }
 
+    async getCsrfToken() {
+        this.csrfToken.isLoading = true
+        const endpoint = '/csrf-token'
+        this.csrfToken.isInit = true
+        try {
+            const res = await fetch(`${this.baseUrl}${endpoint}`)
+            const { csrfToken } = await this.handleResponse<{
+                csrfToken: string
+            }>(res)
+            return csrfToken
+        } catch (error) {
+            return Promise.reject(error)
+        }
+    }
+
+    protected async addCsrfToken(headers: RequestInit['headers']) {
+        let newHeaders = headers || {}
+
+        await this.csrfToken.promise
+        newHeaders = {
+            ...newHeaders,
+            'x-csrf-token': this.csrfToken.token,
+        }
+        return newHeaders
+    }
+
     protected async request<T>(endpoint: string, options: RequestInit) {
         try {
+            const headers = await this.addCsrfToken(options.headers)
             const res = await fetch(`${this.baseUrl}${endpoint}`, {
                 ...this.options,
                 ...options,
+                headers,
             })
             return await this.handleResponse<T>(res)
         } catch (error) {
@@ -153,6 +216,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         }).then((data: IOrderResult) => data)
     }
@@ -167,6 +231,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         })
     }
@@ -306,6 +371,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         }).then((data: IProduct) => ({
             ...data,
@@ -322,6 +388,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             body: data,
             headers: {
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         }).then((data) => ({
             ...data,
@@ -336,6 +403,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         }).then((data: IProduct) => ({
             ...data,
@@ -351,6 +419,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             method: 'DELETE',
             headers: {
                 Authorization: `Bearer ${getCookie('accessToken')}`,
+                'x-csrf-token': this.csrfToken.token,
             },
         })
     }

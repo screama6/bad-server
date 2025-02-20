@@ -4,32 +4,60 @@ import cors from 'cors'
 import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
+import mongoSanitize from 'express-mongo-sanitize'
 import path from 'path'
-import { DB_ADDRESS } from './config'
+import {
+    DB_ADDRESS,
+    PORT,
+    ORIGIN_ALLOW,
+    COOKIES_SECRET,
+    MAX_BODY_SIZE,
+} from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
+import { limiter} from './middlewares/limiter'
 
-const { PORT = 3000 } = process.env
 const app = express()
 
-app.use(cookieParser())
+const corsOptions = {
+    origin: ORIGIN_ALLOW,
+    credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
+}
 
-app.use(cors())
-// app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
-// app.use(express.static(path.join(__dirname, 'public')));
+app.set('trust proxy', 'loopback')
+
+app.use(cookieParser(COOKIES_SECRET))
+
+app.use(limiter)
+
+app.use(json({ limit: MAX_BODY_SIZE }))
+
+app.use(cors(corsOptions))
 
 app.use(serveStatic(path.join(__dirname, 'public')))
 
 app.use(urlencoded({ extended: true }))
-app.use(json())
+
+app.use(mongoSanitize())
 
 app.options('*', cors())
+app.use((req, _res, next) => {
+    console.log('=== Request ===')
+    console.log('Method:', req.method)
+    console.log('Path:', req.path)
+    console.log('Headers:', {
+        csrf: req.headers['x-csrf-token'],
+        cookie: req.headers.cookie,
+        authorization: req.headers.authorization,
+    })
+    next()
+})
+
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)
-
-// eslint-disable-next-line no-console
 
 const bootstrap = async () => {
     try {
